@@ -1,0 +1,11 @@
+// shared 公共包的 tsconfig.json 配置文件，用于编译 shared 公共包
+// TypeScript 项目的配置文件，告诉 TS 编译器：怎么把你的 TS 代码编译成 JS 代码、用什么语法规则、去哪里找代码、输出到哪里。
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo"
+  },
+  "include": ["src/**/*"]
+}

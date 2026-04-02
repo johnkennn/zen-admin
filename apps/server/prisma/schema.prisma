@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid()) // 用户ID
+  email     String   @unique
+  username  String   @unique
+  password  String // 密码
+  role      Role     @default(USER) // 用户角色
+  createdAt DateTime @default(now()) // 创建时间
+  posts     Post[]
+}
+
+model Post {
+  id      Int        @id @default(autoincrement()) // 帖子ID
+  title   String
+  content String     @db.Text
+  status  PostStatus @default(DRAFT)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([authorId])
+  @@index([status])
+}
+
+enum Role {
+  ADMIN // 管理员角色
+  USER // 用户角色
+}
+
+enum PostStatus {
+  DRAFT // 草稿
+  PUBLISHED // 已发布
+}
+
+model Menu {
+  id        String     @id @default(cuid())
+  name      String // 菜单名称
+  path      String     @unique
+  icon      String?
+  component String? // 组件路径
+  affix     Boolean    @default(false) // 是否固定
+  parentId  String? // 父菜单ID
+  parent    Menu?      @relation("MenuChildren", fields: [parentId], references: [id]) // 父菜单关联
+  children  Menu[]     @relation("MenuChildren")
+  sort      Int        @default(0)
+  roles     RoleMenu[] // 角色菜单关联
+  order     Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now()) @updatedAt
+
+  @@index([parentId])
+  @@index([order])
+}
+
+model RoleMenu {
+  role   Role // 角色
+  menuId String // 菜单ID
+  menu   Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade) // 级联删除
+
+  @@id([role, menuId]) // 联合主键
+  @@index([menuId]) // 索引
+}
