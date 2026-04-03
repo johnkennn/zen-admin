@@ -14,6 +14,13 @@ export class PostsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreatePostDto, authorId: string) {
+    const categoryConnect = dto.categoryId
+      ? { category: { connect: { id: dto.categoryId } } }
+      : {};
+    const tagsConnect = dto.tags?.length
+      ? { tags: { connect: dto.tags.map((id) => ({ id })) } }
+      : {};
+
     // 创建帖子
     return this.prisma.post.create({
       data: {
@@ -21,7 +28,9 @@ export class PostsService {
         title: dto.title,
         content: dto.content,
         status: dto.status ?? 'DRAFT',
-        authorId,
+        author: { connect: { id: authorId } },
+        ...categoryConnect,
+        ...tagsConnect,
       },
       select: {
         // 选择返回的字段
@@ -30,6 +39,9 @@ export class PostsService {
         status: true, // 帖子状态
         authorId: true, // 作者ID
         createdAt: true, // 创建时间
+        author: { select: { id: true, username: true } },
+        category: { select: { id: true, name: true } },
+        tags: { select: { id: true, name: true } },
       },
     });
   } // 创建帖子
@@ -52,12 +64,16 @@ export class PostsService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        // NOTE: 如果你刚改完 schema 但 Prisma Client/TS Server 还没刷新，
+        // 这里的类型可能暂时不认识 category/tags。运行 `npx prisma generate` 后可去掉断言。
         select: {
           id: true,
           title: true,
           status: true,
           createdAt: true,
           author: { select: { id: true, username: true } },
+          category: { select: { id: true, name: true } },
+          tags: { select: { id: true, name: true } },
         },
       }),
       this.prisma.post.count({ where }),
@@ -69,9 +85,9 @@ export class PostsService {
     const post = await this.prisma.post.findUnique({
       where: { id },
       include: {
-        author: {
-          select: { id: true, username: true, email: true },
-        },
+        author: { select: { id: true, username: true, email: true } },
+        category: { select: { id: true, name: true } },
+        tags: { select: { id: true, name: true } },
       },
     });
     if (!post) throw new NotFoundException(`Post #${id} not found`);
@@ -82,10 +98,22 @@ export class PostsService {
     const exists = await this.prisma.post.findUnique({ where: { id } });
     if (!exists) throw new NotFoundException(`Post #${id} not found`);
 
+    const { categoryId, tags, ...data } = dto as any;
+
     return this.prisma.post.update({
       where: { id },
-      data: dto,
-      include: { author: { select: { id: true, username: true } } },
+      data: {
+        ...data,
+        ...(categoryId === undefined
+          ? {}
+          : { category: { connect: { id: categoryId } } }),
+        ...(tags === undefined ? {} : { tags: { set: tags.map((t: string) => ({ id: t })) } }),
+      },
+      include: {
+        author: { select: { id: true, username: true } },
+        category: { select: { id: true, name: true } },
+        tags: { select: { id: true, name: true } },
+      },
     });
   }
 

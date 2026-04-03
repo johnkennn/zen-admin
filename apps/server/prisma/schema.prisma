@@ -29,13 +29,20 @@ model Post {
   status  PostStatus @default(DRAFT)
 
   authorId String
-  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade) // 作者关联
+
+    // 新增：分类（建议先可选）
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull) // 删分类时文章 categoryId 置空
+  // 新增：标签（隐式多对多）
+  tags Tag[] // 标签关联
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([authorId])
-  @@index([status])
+  @@index([authorId]) // 作者索引
+  @@index([status]) // 状态索引
+  @@index([categoryId]) // 分类索引
 }
 
 enum Role {
@@ -75,4 +82,15 @@ model RoleMenu {
 
   @@id([role, menuId]) // 联合主键
   @@index([menuId]) // 索引
+}
+
+model Category {
+  id    String @id @default(cuid())
+  name  String @unique
+  posts Post[]
+}
+model Tag {
+  id    String @id @default(cuid())
+  name  String @unique
+  posts Post[]
 }

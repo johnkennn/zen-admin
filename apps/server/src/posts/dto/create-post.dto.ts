@@ -4,6 +4,7 @@ import {
   IsString,
   MinLength,
   MaxLength,
+  IsArray,
   IsOptional,
 } from 'class-validator'; // 导入验证器
 import { PostStatus } from '@prisma/client'; // 导入 PostStatus 枚举
@@ -22,4 +23,13 @@ export class CreatePostDto {
   @IsOptional()
   @IsEnum(PostStatus, { message: '状态必须是 DRAFT 或 PUBLISHED' })
   status?: PostStatus;
+
+  @IsOptional()
+  @IsString()
+  categoryId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true }) // 验证每个元素是否为字符串
+  tags?: string[];
 }
