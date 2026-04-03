@@ -1,34 +1,61 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Req,
+  Query,
+  Get,
+  ParseIntPipe,
+  Param,
+  Delete,
+  Patch,
+} from '@nestjs/common';
+import type { Request } from 'express';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
+import { QueryPostDto } from './dto/query-post.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import type { Role } from '@prisma/client';
 import { UpdatePostDto } from './dto/update-post.dto';
+
+type AuthedRequest = Request & {
+  user: { userId: string; username: string; role: Role };
+};
 
 @Controller('posts')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Post()
-  create(@Body() createPostDto: CreatePostDto) {
-    return this.postsService.create(createPostDto);
+  @UseGuards(JwtAuthGuard)
+  create(@Body() createPostDto: CreatePostDto, @Req() req: AuthedRequest) {
+    return this.postsService.create(createPostDto, req.user.userId);
   }
 
   @Get()
-  findAll() {
-    return this.postsService.findAll();
+  @UseGuards(JwtAuthGuard)
+  findAll(@Query() query: QueryPostDto) {
+    return this.postsService.findAll(query);
   }
-
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.postsService.findOne(+id);
+  @UseGuards(JwtAuthGuard)
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.postsService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
-    return this.postsService.update(+id, updatePostDto);
+  @UseGuards(JwtAuthGuard)
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updatePostDto: UpdatePostDto,
+  ) {
+    return this.postsService.update(id, updatePostDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.postsService.remove(+id);
+  @UseGuards(JwtAuthGuard)
+  remove(@Param('id', ParseIntPipe) id: number, @Req() req: AuthedRequest) {
+    return this.postsService.remove(id, req.user.userId);
   }
 }

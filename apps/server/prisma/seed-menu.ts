@@ -80,14 +80,34 @@ async function main() {
     },
   });
 
+  const posts = await prisma.menu.upsert({
+    where: { path: '/posts' },
+    update: {},
+    create: {
+      name: '帖子管理',
+      path: '/posts',
+      icon: 'Document',
+      component: 'views/posts/index.vue',
+      sort: 12,
+    },
+  });
+
   // 2) 角色授权（RoleMenu）
   // USER: dashboard + profile
   for (const m of [dashboard, profile]) {
     await upsertRoleMenu(Role.USER, m.id);
   }
 
-  // ADMIN: dashboard + profile + reports(+sales) + system(+user)
-  for (const m of [dashboard, profile, reports, reportsSales, system, user]) {
+  // ADMIN: dashboard + profile + reports(+sales) + system(+user) + posts
+  for (const m of [
+    dashboard,
+    profile,
+    reports,
+    reportsSales,
+    system,
+    user,
+    posts,
+  ]) {
     await upsertRoleMenu(Role.ADMIN, m.id);
   }
 
