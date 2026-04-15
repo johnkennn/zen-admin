@@ -24,7 +24,7 @@ function toggleDark() {
       <Sidebar :collapsed="collapsed" />
     </el-aside>
 
-    <el-container>
+    <el-container class="layout__body">
       <el-header class="layout__header">
         <div class="layout__header-left">
           <el-button text @click="collapsed = !collapsed">
@@ -52,7 +52,18 @@ function toggleDark() {
 
 <style scoped>
 .layout {
+  width: 100%;
   height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+}
+
+.layout__body {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .layout__aside {
@@ -70,12 +81,17 @@ function toggleDark() {
 }
 
 .layout__header {
+  flex-shrink: 0;
   height: 56px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--el-border-color);
   background: var(--el-bg-color);
+}
+
+.layout__tags {
+  flex-shrink: 0;
 }
 
 .layout__header-left {
@@ -91,7 +107,10 @@ function toggleDark() {
 }
 
 .layout__main {
+  flex: 1;
+  min-height: 0;
   background: var(--el-bg-color-page);
   overflow: auto;
+  padding: 0;
 }
 </style>

@@ -1,12 +1,23 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePermissionStore } from '@/stores/permission';
 import { useTagsStore } from '@/stores/tags';
+import { useUserStore } from '@/stores/user';
+
 const router = useRouter();
 const permission = usePermissionStore();
 const tagsStore = useTagsStore();
+const userStore = useUserStore();
+
+const displayName = computed(() => userStore.username || 'User');
+const avatarText = computed(() =>
+  displayName.value.slice(0, 1).toUpperCase(),
+);
+
 async function logout() {
   localStorage.removeItem('accessToken');
+  userStore.reset();
   permission.reset();
   tagsStore.clear();
   await router.replace('/login');
@@ -16,8 +27,8 @@ async function logout() {
 <template>
   <el-dropdown>
     <span class="avatar">
-      <el-avatar :size="32">U</el-avatar>
-      <span class="avatar__name">User</span>
+      <el-avatar :size="32">{{ avatarText }}</el-avatar>
+      <span class="avatar__name">{{ displayName }}</span>
     </span>
 
     <template #dropdown>

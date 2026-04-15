@@ -51,10 +51,11 @@
 }
 
 html,
-body,
-#app {
+body {
   height: 100%;
+  width: 100%;
   margin: 0;
+  overflow-x: hidden;
 }
 body {
   background: var(--el-bg-color-page);
@@ -162,13 +163,14 @@ code {
   }
 }
 
+/* 管理后台：全宽铺满视口，避免 Vite 模板遗留的定宽居中影响布局 */
 #app {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  text-align: left;
+  min-height: 100%;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;

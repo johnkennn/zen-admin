@@ -12,6 +12,7 @@ import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { RolesGuard } from './roles.guard';
 
 const jwtExpiresInRaw = process.env.JWT_EXPIRES_IN ?? '7d';
 // jwt signOptions.expiresIn 同时支持数字秒与字符串（如 '7d'）。
@@ -34,8 +35,8 @@ const jwtExpiresIn =
     }), // 注册 JWT 模块
     UsersModule, // 导入 UsersModule 模块
   ],
-  exports: [PassportModule, JwtModule],
+  exports: [PassportModule, JwtModule, RolesGuard],
   controllers: [AuthController], // 注册 AuthController
-  providers: [AuthService, JwtStrategy], // 注册 AuthService, JwtStrategy
+  providers: [AuthService, JwtStrategy, RolesGuard], // 注册 AuthService, JwtStrategy, RolesGuard
 })
 export class AuthModule {}

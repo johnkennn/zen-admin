@@ -3,6 +3,8 @@ import { NestFactory } from '@nestjs/core'; // 导入 NestFactory
 import { AppModule } from './app.module'; // 导入 AppModule
 import * as net from 'node:net'; // 导入 net 模块
 import { ValidationPipe } from '@nestjs/common'; // 导入 ValidationPipe 管道
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'node:path';
 
 // 检查端口是否被占用
 async function isPortFree(port: number): Promise<boolean> {
@@ -28,7 +30,9 @@ async function findFreePort(
 
 // 启动应用
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule); // 创建 NestExpressApplication 应用实例
+  const uploadRoot = join(process.cwd(), 'uploads'); //路径用 process.cwd() 指向 apps/server 运行目录，与 pnpm 在 apps/server 启动一致。
+  app.useStaticAssets(uploadRoot, { prefix: '/uploads/' }); // 使用静态文件中间件，将 uploads 目录下的文件作为静态文件提供服务，并添加前缀 /uploads/
   const preferred =
     Number(process.env.SERVER_PORT) || Number(process.env.PORT) || 3000;
   const port = await findFreePort(preferred, 200);

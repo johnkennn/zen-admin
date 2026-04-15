@@ -44,7 +44,14 @@ export function setupGuards(router: Router) {
     }
     permission.markRoutesAdded();
 
-    return { ...to, replace: true };
+    // 刷新深层路径时，会先匹配到静态的 404（通配符），此时 to.name 为 NotFound。
+    // 只按 path/query/hash 重新导航一次，让新注册的动态路由参与匹配。
+    return {
+      path: to.path,
+      query: to.query,
+      hash: to.hash,
+      replace: true,
+    };
   });
   router.afterEach((to) => {
     // 1) 过滤不需要出现在 TagsView 的路由

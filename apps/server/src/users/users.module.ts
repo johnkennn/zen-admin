@@ -3,10 +3,13 @@
 // 使用 UsersService 注册 UsersService
 // 使用 UsersService 导出 UsersService
 import { Module } from '@nestjs/common';
+import { RolesGuard } from '../auth/roles.guard';
+import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 
 @Module({
-  providers: [UsersService], // 注册 UsersService
+  controllers: [UsersController],
+  providers: [UsersService, RolesGuard], // 注册 UsersService
   exports: [UsersService], // 导出 UsersService
 })
 export class UsersModule {} // 导出 UsersModule 模块

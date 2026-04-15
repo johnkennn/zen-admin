@@ -32,4 +32,10 @@ export class CreatePostDto {
   @IsArray()
   @IsString({ each: true }) // 验证每个元素是否为字符串
   tags?: string[];
+
+  /** 封面图 URL，须为先调用 POST /posts/cover 返回的相对路径 */
+  @IsOptional()
+  @IsString()
+  @MaxLength(500, { message: '封面地址过长' })
+  coverUrl?: string;
 }

@@ -1,10 +1,12 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
+import { UpdateCategoryDto } from './dto/update-category.dto';
 import { normalizeStoredName } from '../common/utils/normalize-name';
 
 function isPrismaUniqueError(e: unknown) {
@@ -33,6 +35,33 @@ export class CategoriesService {
 
     try {
       return await this.prisma.category.create({
+        data: { name: n },
+        select: { id: true, name: true },
+      });
+    } catch (e) {
+      if (isPrismaUniqueError(e)) throw new ConflictException('分类名已存在');
+      throw e;
+    }
+  }
+
+  async update(id: string, dto: UpdateCategoryDto) {
+    const exists = await this.prisma.category.findUnique({ where: { id } });
+    if (!exists) throw new NotFoundException(`Category #${id} not found`);
+    if (dto.name === undefined)
+      throw new BadRequestException('请提供要修改的名称');
+
+    const n = normalizeStoredName(dto.name);
+    if (n === exists.name) {
+      return { id: exists.id, name: exists.name };
+    }
+
+    const dup = await this.prisma.category.findUnique({ where: { name: n } });
+    if (dup && dup.id !== id)
+      throw new ConflictException('分类名已存在');
+
+    try {
+      return await this.prisma.category.update({
+        where: { id },
         data: { name: n },
         select: { id: true, name: true },
       });

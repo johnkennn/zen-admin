@@ -92,22 +92,60 @@ async function main() {
     },
   });
 
+  const content = await prisma.menu.upsert({
+    where: { path: '/content' },
+    update: {},
+    create: {
+      name: '内容',
+      path: '/content',
+      icon: 'FolderOpened',
+      sort: 13,
+    },
+  });
+
+  const contentCategories = await prisma.menu.upsert({
+    where: { path: '/content/categories' },
+    update: { parentId: content.id },
+    create: {
+      name: '分类管理',
+      path: '/content/categories',
+      icon: 'Collection',
+      component: 'views/content/categories/index.vue',
+      parentId: content.id,
+      sort: 14,
+    },
+  });
+
+  const contentTags = await prisma.menu.upsert({
+    where: { path: '/content/tags' },
+    update: { parentId: content.id },
+    create: {
+      name: '标签管理',
+      path: '/content/tags',
+      icon: 'PriceTag',
+      component: 'views/content/tags/index.vue',
+      parentId: content.id,
+      sort: 15,
+    },
+  });
+
   // 2) 角色授权（RoleMenu）
   // USER: dashboard + profile
-  for (const m of [dashboard, profile]) {
-    await upsertRoleMenu(Role.USER, m.id);
-  }
-
-  // ADMIN: dashboard + profile + reports(+sales) + system(+user) + posts
   for (const m of [
     dashboard,
     profile,
+    posts,
+    content,
+    contentCategories,
+    contentTags,
     reports,
     reportsSales,
-    system,
-    user,
-    posts,
   ]) {
+    await upsertRoleMenu(Role.USER, m.id);
+  }
+
+  // ADMIN: dashboard + profile + reports(+sales) + system(+user) + posts + content(+categories+tags)
+  for (const m of [dashboard, profile, system, user]) {
     await upsertRoleMenu(Role.ADMIN, m.id);
   }
 

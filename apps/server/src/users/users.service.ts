@@ -1,14 +1,36 @@
 // users.service.ts 是用户服务的配置文件，用于配置用户服务
 // 使用 @Injectable() 装饰器将 UsersService 标记为注入服务
 // 使用 @Injectable() 装饰器将 UsersService 模块化，以便在应用程序的任何地方都可以使用
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service'; // 导入 PrismaService 模块
 import * as argon2 from 'argon2'; // 导入 argon2 模块
 import { Role } from '@prisma/client';
 
+function isPrismaUniqueError(e: unknown) {
+  return (e as { code?: string })?.code === 'P2002';
+}
+
 @Injectable() // 将 UsersService 标记为注入服务
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {} // 注入 PrismaService 服务
+
+  async findAll() {
+    return this.prisma.user.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+  }
 
   async createUser(
     email: string,
@@ -17,16 +39,31 @@ export class UsersService {
     role: Role = Role.USER,
   ) {
     const hash = await argon2.hash(password); // 加密密码
-    return this.prisma.user.create({
-      data: { email, username, password: hash, role }, // 创建用户数据
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        role: true,
-        createdAt: true,
-      }, // 选择用户数据
-    }); // 创建用户
+    try {
+      return await this.prisma.user.create({
+        data: { email, username, password: hash, role }, // 创建用户数据
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          role: true,
+          createdAt: true,
+        }, // 选择用户数据
+      }); // 创建用户
+    } catch (e) {
+      if (isPrismaUniqueError(e))
+        throw new ConflictException('邮箱或用户名已存在');
+      throw e;
+    }
+  }
+
+  async removeUser(id: string, currentUserId: string) {
+    if (id === currentUserId)
+      throw new ForbiddenException('不能删除当前登录账号');
+    const u = await this.prisma.user.findUnique({ where: { id } });
+    if (!u) throw new NotFoundException(`User #${id} not found`);
+    await this.prisma.user.delete({ where: { id } });
+    return { id };
   }
 
   async validateUser(username: string, password: string) {

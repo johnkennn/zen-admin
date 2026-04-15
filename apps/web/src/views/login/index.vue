@@ -15,7 +15,11 @@ async function onSubmit() {
   try {
     const res = await login(form.username, form.password);
     localStorage.setItem('accessToken', res.accessToken);
-    userStore.setRole(res.user.role);
+    userStore.setUser({
+      id: res.user.id,
+      role: res.user.role,
+      username: res.user.username,
+    });
     ElMessage.success('登录成功');
     await router.replace('/');
   } catch (e: any) {

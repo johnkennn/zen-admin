@@ -37,6 +37,11 @@ export default defineConfig({
         // 把 /api/auth/login -> /auth/login（如果你的后端路由不带 /api 前缀）
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      /** 与 Nest main.ts 中 uploads 静态目录一致；开发时 <img src="/uploads/..."> 走代理 */
+      '/uploads': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
     },
   },
 });

@@ -1,7 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common'; // 导入注入服务和授权异常401错误
+import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt'; // 导入 JwtService 模块，用于签发 Token
 import { UsersService } from '../users/users.service'; // 导入 UsersService 模块，用于验证用户
-import type { MenuItem, UserLoginResponse, UserRole } from '@packages/shared';
+import type {
+  ApiResponse,
+  MenuItem,
+  UserLoginResponse,
+  UserRole,
+} from '@packages/shared';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable() // 将 AuthService 标记为注入服务
@@ -13,33 +18,42 @@ export class AuthService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async login(username: string, password: string): Promise<UserLoginResponse> {
-    // 1. 验证用户
+  /** HTTP 由控制器固定为 200，成功/失败用业务 code 区分（失败勿用 401，以免与「未登录」语义及前端全局处理冲突） */
+  async login(
+    username: string,
+    password: string,
+  ): Promise<ApiResponse<UserLoginResponse | null>> {
     const user = await this.usersService.validateUser(username, password);
 
-    // 2. 用户不存在/密码错误 → 直接抛401
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user) {
+      return {
+        code: 400,
+        message: 'Invalid credentials',
+        data: null,
+      };
+    }
 
-    // 3. 生成 JWT 载荷（存放非敏感信息）
     const payload = {
-      sub: user.id, // 标准：subject = 用户ID
+      sub: user.id,
       username: user.username,
-      role: user.role, // 角色，用于后面权限控制
+      role: user.role,
     };
 
-    // 4. 异步签发 Token
     const accessToken = await this.jwtService.signAsync(payload);
 
-    // 5. 返回给前端
     return {
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        role: user.role, // 这里最好让 shared 的 UserRole 和后端 role 保持同名
-        createdAt: user.createdAt ?? undefined, // 创建时间, 转换为 ISO 字符串, 如果为空, 则返回 undefined
+      code: 200,
+      message: 'success',
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          role: user.role,
+          createdAt: user.createdAt ?? undefined,
+        },
+        accessToken,
       },
-      accessToken, // 登录令牌
     };
   }
   async getMenu(role: UserRole): Promise<MenuItem[]> {

@@ -18,6 +18,29 @@ function onUnauthorized() {
   window.location.href = '/login';
 }
 
+/**
+ * 统一解析接口错误文案：Nest 校验失败时 message 常为 string[]，业务 reject 体为 { message: string }
+ */
+export function getApiErrorMessage(err: unknown, fallback = '请求失败'): string {
+  if (axios.isAxiosError(err)) {
+    const data = err.response?.data as
+      | { message?: string | string[] }
+      | undefined;
+    if (data?.message != null) {
+      const m = data.message;
+      return Array.isArray(m) ? m.join('; ') : String(m);
+    }
+    if (err.message) return err.message;
+    return fallback;
+  }
+  if (err && typeof err === 'object' && 'message' in err) {
+    const m = (err as { message?: unknown }).message;
+    if (Array.isArray(m)) return m.join('; ');
+    if (typeof m === 'string' && m) return m;
+  }
+  return fallback;
+}
+
 export const http: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 15000,
